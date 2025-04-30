@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HotAnime Downloader</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #ff4d7d;
+            --secondary-color: #6a5acd;
+            --dark-color: #1a1a2e;
+            --light-color: #f8f9fa;
+            --gray-color: #e9ecef;
+            --text-color: #212529;
+            --text-light: #495057;
+            --card-bg: #ffffff;
+            --border-color: #dee2e6;
+            --hover-color: #f1f3f5;
+            --shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            --transition: all 0.3s ease;
+        }
+
+        [data-theme="dark"] {
+            --primary-color: #ff4d7d;
+            --secondary-color: #9370db;
+            --dark-color: #121212;
+            --light-color: #1e1e1e;
+            --gray-color: #2d2d2d;
+            --text-color: #f0f0f0;
+            --text-light: #aaaaaa;
+            --card-bg: #2d2d2d;
+            --shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background-color: var(--light-color);
+            color: var(--text-color);
+            transition: var(--transition);
+            min-height: 100vh;
+            padding-top: 70px;
+            padding-bottom: 20px;
+            user-select: none;
+            -webkit-user-select: none;
+            -ms-user-select: none;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 20px;
+            background-color: var(--light-color);
+            box-shadow: var(--shadow);
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 100;
+        }
+
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+            color: var(--primary-color);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .logo i {
+            font-size: 28px;
+        }
+
+        .back-btn {
+            background: linear-gradient(45deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 20px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-weight: 600;
+            transition: var(--transition);
+        }
+
+        .back-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .download-card {
+            background-color: var(--card-bg);
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: var(--shadow);
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .download-card h2 {
+            color: var(--primary-color);
+            margin-bottom: 15px;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .url-input {
+            flex: 1;
+            padding: 12px 15px;
+            border-radius: 30px;
+            border: 1px solid var(--border-color);
+            background-color: var(--light-color);
+            color: var(--text-color);
+            font-size: 16px;
+            transition: var(--transition);
+        }
+
+        .url-input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+        }
+
+        .get-btn {
+            background: linear-gradient(45deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 30px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .get-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .video-info {
+            margin-top: 20px;
+            display: none;
+        }
+
+        .video-title {
+            font-size: 18px;
+            color: var(--primary-color);
+            margin-bottom: 15px;
+        }
+
+        .download-btn {
+            background: linear-gradient(45deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 30px;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: var(--transition);
+        }
+
+        .download-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .status-message {
+            margin-top: 15px;
+            padding: 12px;
+            border-radius: 5px;
+            display: none;
+        }
+
+        .error {
+            background-color: rgba(255, 77, 125, 0.1);
+            color: var(--primary-color);
+            display: block;
+            border: 1px solid var(--primary-color);
+        }
+
+        .success {
+            background-color: rgba(106, 90, 205, 0.1);
+            color: var(--secondary-color);
+            display: block;
+            border: 1px solid var(--secondary-color);
+        }
+
+        .loading-spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,77,125,0.3);
+            border-radius: 50%;
+            border-top-color: var(--primary-color);
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        .tutorial {
+            background-color: var(--gray-color);
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+            color: var(--text-light);
+            font-size: 14px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        @media (max-width: 768px) {
+            .input-group {
+                flex-direction: column;
+            }
+            
+            .get-btn {
+                width: 100%;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .header {
+                padding: 10px 15px;
+            }
+            
+            .logo {
+                font-size: 20px;
+            }
+            
+            .logo i {
+                font-size: 24px;
+            }
+            
+            .back-btn {
+                padding: 6px 12px;
+                font-size: 14px;
+            }
+            
+            .container {
+                padding: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="logo">
+            <i class="fas fa-film"></i>
+            <span>HotAnime</span>
+        </div>
+        <button class="back-btn" id="backBtn">
+            <i class="fas fa-arrow-left"></i>
+            Back
+        </button>
+    </div>
+
+    <div class="container">
+        <div class="download-card">
+            <h2>Download Anime</h2>
+            <div class="input-group">
+                <input type="text" class="url-input" id="videoUrl" placeholder="Paste YouTube URL here..." />
+                <button class="get-btn" id="getBtn">
+                    <i class="fas fa-search"></i> Get Video
+                </button>
+            </div>
+
+            <div class="video-info" id="videoInfo">
+                <h3 class="video-title" id="videoTitle">Video Title</h3>
+                <div id="downloadOptions"></div>
+                <div class="status-message" id="statusMessage"></div>
+            </div>
+
+            <div class="tutorial">
+                <i class="fas fa-info-circle"></i> Tip: Tap on the three dots icon on the left of video to see download options
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Initialize dark mode from localStorage
+        if (localStorage.getItem('theme') === 'dark') {
+            document.body.setAttribute('data-theme', 'dark');
+        }
+
+        // Back button functionality
+        document.getElementById('backBtn').addEventListener('click', () => {
+            window.history.back();
+        });
+
+        const videoUrlInput = document.getElementById('videoUrl');
+        const getBtn = document.getElementById('getBtn');
+        const videoInfo = document.getElementById('videoInfo');
+        const videoTitle = document.getElementById('videoTitle');
+        const downloadOptions = document.getElementById('downloadOptions');
+        const statusMessage = document.getElementById('statusMessage');
+
+        function getVideoId(url) {
+            const regExp = /^.*(?:youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]{11}).*/;
+            const match = url.match(regExp);
+            return match ? match[1] : null;
+        }
+
+        function cleanTitle(title) {
+            return title.replace(/.*?|.*?|[^\w\s]|_/g, '').replace(/\s+/g, ' ').trim();
+        }
+
+        function showError(message) {
+            statusMessage.className = 'status-message error';
+            statusMessage.innerHTML = `<i class="fas fa-exclamation-circle"></i> ${message}`;
+            statusMessage.style.display = 'block';
+        }
+
+        function showSuccess(message) {
+            statusMessage.className = 'status-message success';
+            statusMessage.innerHTML = `<i class="fas fa-check-circle"></i> ${message}`;
+            statusMessage.style.display = 'block';
+        }
+
+        function hideStatus() {
+            statusMessage.style.display = 'none';
+        }
+
+        async function downloadVideo(videoId) {
+            try {
+                showSuccess('Downloading video... Please wait');
+                
+                const response = await fetch(`https://ytstream-download-youtube-videos.p.rapidapi.com/dl?id=${videoId}`, {
+                    method: 'GET',
+                    headers: {
+                        'X-RapidAPI-Key': 'cbb6e2b6bamsh041eed1c81e7e0dp1b846ejsn669acdaca5ed',
+                        'X-RapidAPI-Host': 'ytstream-download-youtube-videos.p.rapidapi.com'
+                    }
+                });
+
+                const data = await response.json();
+                if (!data || !data.formats || data.formats.length === 0) {
+                    throw new Error("No downloadable formats found.");
+                }
+
+                const mp4 = data.formats.find(f => f.mimeType.includes('video/mp4') && f.url);
+                if (!mp4) throw new Error("No MP4 format found.");
+
+                // Create a hidden link and trigger click to download
+                const link = document.createElement('a');
+                link.href = mp4.url;
+                link.download = `anime_video_${videoId}.mp4`;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                
+                showSuccess('Download started! Check your downloads folder');
+            } catch (err) {
+                showError(`Download failed: ${err.message}`);
+                console.error(err);
+            }
+        }
+
+        async function getVideoInfo() {
+            const videoUrl = videoUrlInput.value.trim();
+            const videoId = getVideoId(videoUrl);
+
+            if (!videoId) {
+                showError('Please enter a valid YouTube URL');
+                return;
+            }
+
+            getBtn.innerHTML = '<span class="loading-spinner"></span> Loading...';
+            getBtn.disabled = true;
+            hideStatus();
+
+            try {
+                // You could use YouTube Data API for actual title; we'll use a placeholder for now
+                videoTitle.textContent = 'Anime Video';
+                downloadOptions.innerHTML = `<button class="download-btn" id="download-mp4">
+                    <i class="fas fa-download"></i> Download MP4
+                </button>`;
+
+                document.getElementById('download-mp4').addEventListener('click', () => {
+                    downloadVideo(videoId);
+                });
+
+                videoInfo.style.display = 'block';
+                showSuccess('Video ready to download!');
+            } catch (error) {
+                showError(`Error: ${error.message}`);
+                console.error(error);
+            } finally {
+                getBtn.innerHTML = '<i class="fas fa-search"></i> Get Video';
+                getBtn.disabled = false;
+            }
+        }
+
+        // Check for auto-download on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const videoId = urlParams.get('id');
+            const autoDownload = urlParams.get('autodownload');
+
+            if (videoId && autoDownload === 'true') {
+                // Auto-fill the input and trigger download
+                videoUrlInput.value = `https://www.youtube.com/watch?v=${videoId}`;
+                getVideoInfo().then(() => {
+                    document.getElementById('download-mp4').click();
+                });
+            }
+        });
+
+        getBtn.addEventListener('click', getVideoInfo);
+        videoUrlInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') getVideoInfo();
+        });
+    </script>
+</body>
+</html>
