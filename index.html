@@ -947,6 +947,8 @@ button, .action-btn, .nav-item {
     overflow: hidden;
     text-overflow: ellipsis;
 }
+
+
     </style>
 </head>
 <body>
@@ -1067,6 +1069,8 @@ button, .action-btn, .nav-item {
          // Store page variables
 let storeCurrentPage = 1;
 let storeLastPage = 1;
+let storeQuery = '';
+
 
 // Function to fetch anime from Jikan API
 async function fetchStoreAnime(page = 1, query = '') {
@@ -1135,6 +1139,64 @@ async function loadStoreAnime(query = '') {
     document.getElementById('storePageInfo').textContent = `Page ${storeCurrentPage} of ${storeLastPage}`;
     document.getElementById('storePrevPage').disabled = storeCurrentPage === 1;
     document.getElementById('storeNextPage').disabled = storeCurrentPage === storeLastPage;
+}
+
+async function fetchRelatedVideos(videoId) {
+    const currentKey = getCurrentApiKey();
+    if (!currentKey) return [];
+
+    try {
+        // Add "anime" to the related-to query and filter for longer videos
+        const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&relatedToVideoId=${videoId}&type=video&videoDuration=long&maxResults=6&relevanceLanguage=en&q=anime&key=${currentKey}`;
+        
+        const response = await fetch(url);
+        if (!response.ok) throw new Error('API error');
+        
+        const data = await response.json();
+        return data.items || [];
+    } catch (error) {
+        console.error('Error fetching related videos:', error);
+        if (error.message.includes('quota') && rotateApiKey()) {
+            return fetchRelatedVideos(videoId); // Retry with new key
+        }
+        return [];
+    }
+}
+
+function displayRelatedVideos(videos) {
+    const relatedContainer = document.getElementById('relatedVideos');
+    if (!relatedContainer) return;
+    
+    relatedContainer.innerHTML = '';
+    
+    // Filter for anime content more aggressively
+    const animeKeywords = ['anime', 'animation', 'animé', 'japanese', 'manga', 'episode'];
+    const excludeKeywords = ['review', 'reaction', 'analysis', 'trailer', 'clip', 'scene'];
+    
+    const filteredVideos = videos.filter(video => {
+        const title = video.snippet.title.toLowerCase();
+        const isAnime = animeKeywords.some(kw => title.includes(kw));
+        const isNotExcluded = !excludeKeywords.some(kw => title.includes(kw));
+        return isAnime && isNotExcluded;
+    });
+
+    if (filteredVideos.length === 0) {
+        relatedContainer.innerHTML = '<p>No related anime videos found</p>';
+        return;
+    }
+
+    filteredVideos.forEach(video => {
+        const videoElement = document.createElement('div');
+        videoElement.className = 'related-video';
+        videoElement.innerHTML = `
+            <img src="${video.snippet.thumbnails.medium.url}" alt="${video.snippet.title}">
+            <h4>${cleanTitle(video.snippet.title)}</h4>
+        `;
+        videoElement.addEventListener('click', () => {
+            window.location.href = `details.html?id=${video.id.videoId}`;
+        });
+        relatedContainer.appendChild(videoElement);
+    });
 }
 
 // Simple wishlist function (you can expand this)
@@ -1257,7 +1319,7 @@ function handleApiKeyExhaustion() {
         let currentPage = 1;
         let nextPageToken = '';
         let prevPageToken = '';
-        let query = 'anime movie full length english';
+        let query = 'anime full movie english dubbed';
 
         // Initialize dark mode
         const darkModeToggle = document.getElementById('darkModeToggle');
@@ -1303,29 +1365,31 @@ function handleApiKeyExhaustion() {
 });
         // Function to clean up YouTube titles
         function cleanTitle(title) {
-            const trashPatterns = [
-                /\|.*$/,                  // Remove everything after the first "|"
-                /Full Movie HD/i,         // Remove "Full Movie HD"
-                /English Dub/i,           // Remove "English Dub"
-                /Latest .*$/i,            // Remove "Latest ..."
-                /Anime Movie/i,           // Remove "Anime Movie"
-                /HD|HQ/i,                 // Remove "HD" or "HQ"
-                /\(.*\)/,                 // Remove anything in parentheses
-                /\[.*\]/                  // Remove anything in brackets
-            ];
+    // Remove common non-anime patterns first
+    const patternsToRemove = [
+        /\(.*\)|\[.*\]/g,  // Remove anything in parentheses or brackets
+        /(official|trailer|clip|review|reaction|ost|op|ed|amv).*/gi,
+        /[0-9]{4}/g,        // Remove years
+        /(hd|full|movie|episode|english|dubbed|subbed).*/gi,
+        /\|.*$/g            // Remove everything after |
+    ];
 
-            let cleanedTitle = title.trim();
-            trashPatterns.forEach(pattern => {
-                cleanedTitle = cleanedTitle.replace(pattern, '').trim();
-            });
+    let cleaned = title;
+    patternsToRemove.forEach(pattern => {
+        cleaned = cleaned.replace(pattern, '');
+    });
 
-            // Capitalize first letter of each word
-            cleanedTitle = cleanedTitle.split(' ')
-                .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-                .join(' ');
+    // Remove common suffixes
+    cleaned = cleaned
+        .replace(/(part|chapter|vol\.?|ep\.?)\s*\d+/gi, '')
+        .replace(/\s+/g, ' ')
+        .trim();
 
-            return cleanedTitle;
-        }
+    // Capitalize properly
+    return cleaned.split(' ')
+        .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+        .join(' ');
+}
 
         // Fetch anime movies from YouTube
  async function fetchAnimeMovies(page, q) {
@@ -1335,7 +1399,8 @@ function handleApiKeyExhaustion() {
     }
 
     try {
-        const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(q)}&type=video&videoDuration=long&maxResults=10&pageToken=${page === 1 ? '' : nextPageToken}&key=${currentKey}`;
+        // Add more specific parameters to the YouTube search
+        const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(q + " anime")}&type=video&videoDuration=long&maxResults=10&videoDefinition=high&relevanceLanguage=en&pageToken=${page === 1 ? '' : nextPageToken}&key=${currentKey}`;
         console.log(`Fetching with key index: ${currentKeyIndex}`);
         
         const response = await fetch(url);
@@ -1478,6 +1543,19 @@ function handleApiKeyExhaustion() {
             localStorage.setItem('watchHistory', JSON.stringify(history));
             loadWatchHistory();
         }
+        
+        async function loadVideoDetails() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const videoId = urlParams.get('id');
+    
+    if (!videoId) return;
+    
+    // Fetch main video details...
+    
+    // Fetch related videos
+    const relatedVideos = await fetchRelatedVideos(videoId);
+    displayRelatedVideos(relatedVideos);
+}
 
         // Load watch history from localStorage
         function loadWatchHistory() {
@@ -1550,14 +1628,20 @@ function handleApiKeyExhaustion() {
         // Search functionality
         document.getElementById('searchInput').addEventListener('keypress', async (e) => {
     if (e.key === 'Enter') {
-        query = e.target.value.trim() || 'anime movie full length english';
-        currentPage = 1;
-        nextPageToken = '';
-        prevPageToken = '';
-        loadAnimeMovies();
-
-        // Switch to movies tab
-        document.querySelector('[data-target="moviesContent"]').click();
+        const activeTab = document.querySelector('.nav-item.active').dataset.target;
+        const searchTerm = e.target.value.trim();
+        
+        if (activeTab === 'moviesContent') {
+            query = searchTerm || 'anime full movie english dubbed';
+            currentPage = 1;
+            nextPageToken = '';
+            prevPageToken = '';
+            loadAnimeMovies();
+        } else if (activeTab === 'storeContent') {
+            storeQuery = searchTerm;
+            storeCurrentPage = 1;
+            loadStoreAnime(storeQuery);
+        }
     }
 });
         // Pagination controls
@@ -1578,7 +1662,7 @@ function handleApiKeyExhaustion() {
        
         // Initialize
         loadWatchHistory();
-        let storeQuery = ''; // Default query for the Store tab
+        
         
         
     </script>
