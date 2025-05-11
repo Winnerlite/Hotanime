@@ -1855,14 +1855,13 @@ document.addEventListener('DOMContentLoaded', function() {
 ">
   <div style="background:#222; padding:30px; border-radius:12px; width:80%; max-width:320px;">
     <h3>Ad Redirecting in <span id="countdown">5</span>s</h3>
-    <p>Tap back button to come exit Ad</p>
+    <p>Tap back button to exit Ad</p>
   </div>
 </div>
 
 <script>
 let adCooldown = false;
 
-// Function to show modal
 function showAdCountdownModal() {
   const modal = document.getElementById('adCountdownModal');
   const counter = document.getElementById('countdown');
@@ -1878,46 +1877,20 @@ function showAdCountdownModal() {
     if (seconds === 0) {
       clearInterval(countdown);
       modal.style.display = 'none';
-
-      // Short delay before redirect to ensure localStorage saves
-      setTimeout(() => {
-        window.open("https://pubertytechnicallyknowhow.com/kw2uetiz?key=797d2b2b24f8878787846103f1a02e7d", "_blank");
-        
-      }, 200); // Let browser catch up
+      // Redirect in same tab
+      window.location.href = "https://pubertytechnicallyknowhow.com/kw2uetiz?key=797d2b2b24f8878787846103f1a02e7d"; // Replace with real link
     }
   }, 1000);
 }
 
-console.log("Stored hasSeenFirstAd =", localStorage.getItem("hasSeenFirstAd"));
-// Handle first-time user
-function handleFirstTimeAd() {
-  if (!localStorage.getItem("hasSeenFirstAd")) {
-    localStorage.setItem("hasSeenFirstAd", "true");
-
-    setTimeout(() => {
-      showAdCountdownModal();
-      adCooldown = true;
-      setTimeout(() => adCooldown = false, 60000); // cooldown
-    }, 10000);
+// Trigger ad every 60 seconds
+setInterval(() => {
+  if (!adCooldown) {
+    showAdCountdownModal();
+    adCooldown = true;
+    setTimeout(() => adCooldown = false, 60000); // cooldown resets after 1 min
   }
-}
-
-// Handle recurring users
-function startRecurringAds() {
-  setInterval(() => {
-    if (!adCooldown && localStorage.getItem("hasSeenFirstAd") === "true") {
-      showAdCountdownModal();
-      adCooldown = true;
-      setTimeout(() => adCooldown = false, 60000); // 1 min cooldown
-    }
-  }, 10000); // check every 10s
-}
-
-// On load
-window.addEventListener("DOMContentLoaded", () => {
-  handleFirstTimeAd();
-  startRecurringAds();
-});
+}, 60000); // check every 60s
 </script>
 </body>
 </html>
